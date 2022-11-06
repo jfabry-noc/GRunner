@@ -2,9 +2,52 @@
 import pygame
 import sys
 
+from random import randint
+
+
+
 PLAYER_INTERVAL = 15
 BACKGROUND_INTERVAL = 5
 SCALE_INTERVAL = 0.003
+FRAME_RATE = 30
+
+# Class for tracking impediments, good or bad.
+class Impediment(pygame.sprite.Sprite):
+    def __init__(self, category: str):
+        """
+        Objects the player can interact with.
+
+        Args:
+            category (str): Object type. One of "apple", "dell", "vim", or "vscode".
+        """
+        super().__init__()
+        if category.lower() == "vim":
+            self.image = pygame.image.load("static/vim.png")
+        else:
+            # Will eventually be something different. Just testing size for now.
+            self.image = pygame.image.load("static/vim.png").convert_alpha()
+
+        self.rect = self.image.get_rect(center = (randint(900, 1100), randint(30, 370)))
+
+    def update(self, interval: int, scale: float):
+        """
+        Upates the position of the impediment. Takes an integer for how much
+        the X axis should change and a float for the exponential scaling to
+        increase the speed over time.
+
+        Args:
+            interval (int): Baseline for how much the axis should change.
+            scale (float): Scale for increasing the rate of change.
+        """
+        self.rect.x = self.rect.x - (interval + (interval * scale))
+        self.destroy()
+
+    def destroy(self):
+        """
+        Manages the cleanup of impediments which are off the screen.
+        """
+        if self.rect.x <= -100:
+            self.kill()
 
 # Class for Garrett Prime.
 class GPrime(pygame.sprite.Sprite):
@@ -41,7 +84,7 @@ class GRunner:
         """
         pygame.init()
         pygame.display.set_caption("G Runner")
-        self.tick_rate = 30
+        self.tick_rate = FRAME_RATE
         self.score = 0
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
@@ -56,6 +99,13 @@ class GRunner:
         # Create Garrett Prime.
         self.gprime = pygame.sprite.GroupSingle()
         self.gprime.add(GPrime(PLAYER_INTERVAL))
+
+        # Create the group to hold the obstacles.
+        self.impediment = pygame.sprite.Group()
+
+        # Create a timer for spawning obstacles.
+        self.impediment_timer = pygame.USEREVENT + 1
+        pygame.time.set_timer(self.impediment_timer, 1200)
 
     def print_background(self):
         """
@@ -88,6 +138,9 @@ class GRunner:
             print(f"Movement scale: {self.movement_scale}")
             pygame.display.update()
             for event in pygame.event.get():
+                if event.type == self.impediment_timer:
+                    self.impediment.add(Impediment("vim"))
+
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit(0)
@@ -99,6 +152,10 @@ class GRunner:
             # Draw the player.
             self.gprime.draw(self.screen)
             self.gprime.update()
+
+            # Draw the impediment(s).
+            self.impediment.draw(self.screen)
+            self.impediment.update(self.movement_interval, self.movement_scale)
 
             self.clock.tick(self.tick_rate)
 
