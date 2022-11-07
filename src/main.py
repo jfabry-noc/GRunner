@@ -2,7 +2,7 @@
 import pygame
 import sys
 
-from random import randint
+from random import randint, choice
 
 
 
@@ -23,9 +23,12 @@ class Impediment(pygame.sprite.Sprite):
         super().__init__()
         if category.lower() == "vim":
             self.image = pygame.image.load("static/vim.png")
-        else:
-            # Will eventually be something different. Just testing size for now.
-            self.image = pygame.image.load("static/vim.png").convert_alpha()
+        elif category.lower() == "apple":
+            self.image = pygame.image.load("static/apple.png")
+        elif category.lower() == "dell":
+            self.image = pygame.image.load("static/dell.png")
+        elif category.lower() == "vscode":
+            self.image = pygame.image.load("static/vscode.png")
 
         self.rect = self.image.get_rect(center = (randint(900, 1100), randint(30, 370)))
 
@@ -135,11 +138,10 @@ class GRunner:
         """
         while True:
             self.movement_scale += SCALE_INTERVAL
-            print(f"Movement scale: {self.movement_scale}")
             pygame.display.update()
             for event in pygame.event.get():
                 if event.type == self.impediment_timer:
-                    self.impediment.add(Impediment("vim"))
+                    self.impediment.add(Impediment(choice(["vim", "apple", "vscode", "dell"])))
 
                 if event.type == pygame.QUIT:
                     pygame.quit()
