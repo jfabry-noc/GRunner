@@ -9,7 +9,9 @@ from random import randint, choice
 PLAYER_INTERVAL = 15
 BACKGROUND_INTERVAL = 5
 SCALE_INTERVAL = 0.003
+IMPEDIMENT_INTERVAL = 1200
 FRAME_RATE = 30
+POINT_INCREMENT = 5
 
 # Class for tracking impediments, good or bad.
 class Impediment(pygame.sprite.Sprite):
@@ -21,13 +23,14 @@ class Impediment(pygame.sprite.Sprite):
             category (str): Object type. One of "apple", "dell", "vim", or "vscode".
         """
         super().__init__()
-        if category.lower() == "vim":
+        self.category = category.lower()
+        if self.category == "vim":
             self.image = pygame.image.load("static/vim.png")
-        elif category.lower() == "apple":
+        elif self.category == "apple":
             self.image = pygame.image.load("static/apple.png")
-        elif category.lower() == "dell":
+        elif self.category == "dell":
             self.image = pygame.image.load("static/dell.png")
-        elif category.lower() == "vscode":
+        elif self.category == "vscode":
             self.image = pygame.image.load("static/vscode.png")
 
         self.rect = self.image.get_rect(center = (randint(900, 1100), randint(30, 370)))
@@ -77,6 +80,9 @@ class GPrime(pygame.sprite.Sprite):
             if self.rect.bottom >= 400:
                 self.rect.bottom = 400
 
+    def reset(self):
+        self.rect.center = (80, 200)
+
     def update(self):
         self.player_input()
 
@@ -89,11 +95,19 @@ class GRunner:
         pygame.display.set_caption("G Runner")
         self.tick_rate = FRAME_RATE
         self.score = 0
+        self.high_score = 0
+        self.impediment_interval = IMPEDIMENT_INTERVAL
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
         self.background_surf = pygame.image.load("static/city.png").convert()
         self.background_rect = self.background_surf.get_rect(topleft = (0, 0))
-        self.font = pygame.font.Font("fonts/Prompt-Medium.ttf", 40)
+        self.score_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 40)
+        self.title_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 75)
+        self.text_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 35)
+        self.state = "title"
+        self.player_intro_surf = pygame.image.load("static/g_base.gif").convert_alpha()
+        self.player_intro_surf = pygame.transform.rotozoom(self.player_intro_surf, 0, 3)
+        self.player_intro_rect = self.player_intro_surf.get_rect(center = (400, 200))
 
         # Define properties for how rapidly objects move.
         self.movement_interval = BACKGROUND_INTERVAL
@@ -108,7 +122,7 @@ class GRunner:
 
         # Create a timer for spawning obstacles.
         self.impediment_timer = pygame.USEREVENT + 1
-        pygame.time.set_timer(self.impediment_timer, 1200)
+        pygame.time.set_timer(self.impediment_timer, self.impediment_interval)
 
     def print_background(self):
         """
@@ -128,37 +142,114 @@ class GRunner:
             increase (int): Amount by which to increment the score.
         """
         self.score += increase
-        self.score_surf = self.font.render(f"Score: {self.score}", False, "#8F3A84")
+        self.score_surf = self.score_font.render(f"Score: {self.score}", False, "#8F3A84")
         self.score_rect = self.score_surf.get_rect(center = (400, 40))
         self.screen.blit(self.score_surf, self.score_rect)
+
+    def detect_collision(self):
+        """
+        Checks if the player has collided with an impediment.
+        """
+        # Returns an empty list if there is no collision.
+        sprite_collision = pygame.sprite.spritecollide(self.gprime.sprite, self.impediment, False)
+        for single_sprite in sprite_collision:
+            if single_sprite.category == "vim" or single_sprite.category == "apple":
+                self.score += POINT_INCREMENT
+                single_sprite.kill()
+            elif single_sprite.category == "dell" or single_sprite.category == "vscode":
+                self.state = "over"
+                self.impediment.empty()
+                self.gprime.sprite.reset()
 
     def run(self) -> None:
         """
         Starts game execution.
         """
         while True:
-            self.movement_scale += SCALE_INTERVAL
-            pygame.display.update()
+        # Process events.
             for event in pygame.event.get():
-                if event.type == self.impediment_timer:
-                    self.impediment.add(Impediment(choice(["vim", "apple", "vscode", "dell"])))
+                if self.state == "running":
+                    if event.type == self.impediment_timer:
+                        self.impediment.add(Impediment(choice(["vim", "apple", "vscode", "dell"])))
+                elif self.state == "title" or self.state == "over":
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                        self.state = "running"
+
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                        pygame.quit()
+                        sys.exit(0)
 
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit(0)
 
-            # Render the background first.
-            self.print_background()
-            self.display_score()
+            # Display the title screen.
+            if self.state == "title":
+                self.screen.fill((51, 204, 205))
+                self.screen.blit(self.player_intro_surf, self.player_intro_rect)
 
-            # Draw the player.
-            self.gprime.draw(self.screen)
-            self.gprime.update()
+                title_surface = self.title_font.render("GRunner", False, "#8F3A84")
+                title_rect = title_surface.get_rect(center = (400, 50))
+                self.screen.blit(title_surface, title_rect)
 
-            # Draw the impediment(s).
-            self.impediment.draw(self.screen)
-            self.impediment.update(self.movement_interval, self.movement_scale)
+                text_surface = self.text_font.render("Help Garrett Prime!", False, "#8F3A84")
+                text_rect = text_surface.get_rect(center = (400, 275))
+                self.screen.blit(text_surface, text_rect)
 
+                instruct_surface = self.text_font.render("Hit Enter To Play", False, "#8F3A84")
+                instruct_rect = instruct_surface.get_rect(center = (400, 350))
+                self.screen.blit(instruct_surface, instruct_rect)
+
+            elif self.state == "over":
+                if self.score > self.high_score:
+                    self.high_score = self.score
+                self.score = 0
+                self.movement_scale = 0
+                self.impediment_interval = IMPEDIMENT_INTERVAL
+
+                self.screen.fill((51, 204, 205))
+                self.screen.blit(self.player_intro_surf, self.player_intro_rect)
+
+                title_surface = self.title_font.render("Game Over!", False, "#8F3A84")
+                title_rect = title_surface.get_rect(center = (400, 50))
+                self.screen.blit(title_surface, title_rect)
+
+                text_surface = self.text_font.render(f"High Score: {self.high_score}", False, "#8F3A84")
+                text_rect = text_surface.get_rect(center = (400, 275))
+                self.screen.blit(text_surface, text_rect)
+
+                instruct_surface = self.text_font.render("Hit Enter To Play Again", False, "#8F3A84")
+                instruct_rect = instruct_surface.get_rect(center = (400, 350))
+                self.screen.blit(instruct_surface, instruct_rect)
+
+            elif self.state == "running":
+                self.movement_scale += SCALE_INTERVAL
+                for event in pygame.event.get():
+                    if event.type == self.impediment_timer:
+                        self.impediment.add(Impediment(choice(["vim", "apple", "vscode", "dell"])))
+
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit(0)
+
+                # Render the background first.
+                self.print_background()
+
+                # Draw the impediment(s).
+                self.impediment.draw(self.screen)
+                self.impediment.update(self.movement_interval, self.movement_scale)
+
+                # Draw the score so it's always on top of the impediments.
+                self.display_score()
+
+                # Draw the player.
+                self.gprime.draw(self.screen)
+                self.gprime.update()
+
+                # Check for a collision.
+                self.detect_collision()
+
+            pygame.display.update()
             self.clock.tick(self.tick_rate)
 
 if __name__ == "__main__":
