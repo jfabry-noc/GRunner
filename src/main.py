@@ -4,14 +4,17 @@ import sys
 
 from random import randint, choice
 
+from pygame.time import get_ticks
+
 
 
 PLAYER_INTERVAL = 15
 BACKGROUND_INTERVAL = 5
 SCALE_INTERVAL = 0.003
-IMPEDIMENT_INTERVAL = 1200
+IMPEDIMENT_INTERVAL = 1000
 FRAME_RATE = 30
 POINT_INCREMENT = 5
+SPAWN_INTERVAL = 12
 
 # Class for tracking impediments, good or bad.
 class Impediment(pygame.sprite.Sprite):
@@ -96,6 +99,8 @@ class GRunner:
         self.tick_rate = FRAME_RATE
         self.score = 0
         self.high_score = 0
+        self.round_start = 0
+        self.impediment_increase = SPAWN_INTERVAL
         self.impediment_interval = IMPEDIMENT_INTERVAL
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
@@ -174,6 +179,7 @@ class GRunner:
                 elif self.state == "title" or self.state == "over":
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                         self.state = "running"
+                        self.round_start = int(pygame.time.get_ticks() / 1000)
 
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
                         pygame.quit()
@@ -206,6 +212,7 @@ class GRunner:
                 self.score = 0
                 self.movement_scale = 0
                 self.impediment_interval = IMPEDIMENT_INTERVAL
+                self.impediment_increase = SPAWN_INTERVAL
 
                 self.screen.fill((51, 204, 205))
                 self.screen.blit(self.player_intro_surf, self.player_intro_rect)
@@ -224,13 +231,14 @@ class GRunner:
 
             elif self.state == "running":
                 self.movement_scale += SCALE_INTERVAL
-                for event in pygame.event.get():
-                    if event.type == self.impediment_timer:
-                        self.impediment.add(Impediment(choice(["vim", "apple", "vscode", "dell"])))
 
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit(0)
+                # Check if the spawn rates needs to be increased.
+                if int(pygame.time.get_ticks() / 1000) - self.round_start > self.impediment_increase:
+                    self.impediment_increase += SPAWN_INTERVAL
+                    self.impediment_interval = round(0.75 * self.impediment_interval)
+                    print(f"Increasing spawn rate. Interval is {self.impediment_interval}")
+                    print(f"Next increase at: {self.impediment_increase}")
+                    pygame.time.set_timer(self.impediment_timer, self.impediment_interval)
 
                 # Render the background first.
                 self.print_background()
