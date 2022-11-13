@@ -69,7 +69,11 @@ class GPrime(pygame.sprite.Sprite):
         """
         super().__init__()
         self.interval = interval
-        self.image = pygame.transform.rotozoom(pygame.image.load("static/g_base.gif").convert_alpha(), 0, 2.5)
+        self.garrett_teeth = pygame.transform.rotozoom(pygame.image.load("static/gprime_0.png").convert_alpha(), 0, 0.4)
+        self.garrett_mouth = pygame.transform.rotozoom(pygame.image.load("static/gprime_1.png").convert_alpha(), 0, 0.4)
+        self.garrett_fly = [self.garrett_teeth, self.garrett_mouth]
+        self.animation_index = 0
+        self.image = self.garrett_fly[self.animation_index]
         self.rect = self.image.get_rect(center = (80, 200))
 
     def player_input(self):
@@ -86,8 +90,15 @@ class GPrime(pygame.sprite.Sprite):
     def reset(self):
         self.rect.center = (80, 200)
 
+    def update_animation(self):
+        self.animation_index += 0.1
+        if self.animation_index >= len(self.garrett_fly):
+            self.animation_index = 0
+        self.image = self.garrett_fly[int(self.animation_index)]
+
     def update(self):
         self.player_input()
+        self.update_animation()
 
 class GRunner:
     def __init__(self) -> None:
@@ -110,9 +121,9 @@ class GRunner:
         self.title_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 75)
         self.text_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 35)
         self.state = "title"
-        self.player_intro_surf = pygame.image.load("static/g_base.gif").convert_alpha()
-        self.player_intro_surf = pygame.transform.rotozoom(self.player_intro_surf, 0, 3)
-        self.player_intro_rect = self.player_intro_surf.get_rect(center = (400, 200))
+        self.player_intro_surf = pygame.image.load("static/gprime_0.png").convert_alpha()
+        self.player_intro_surf = pygame.transform.rotozoom(self.player_intro_surf, 0, 0.5)
+        self.player_intro_rect = self.player_intro_surf.get_rect(center = (400, 175))
 
         # Define properties for how rapidly objects move.
         self.movement_interval = BACKGROUND_INTERVAL
@@ -236,8 +247,6 @@ class GRunner:
                 if int(pygame.time.get_ticks() / 1000) - self.round_start > self.impediment_increase:
                     self.impediment_increase += SPAWN_INTERVAL
                     self.impediment_interval = round(0.75 * self.impediment_interval)
-                    print(f"Increasing spawn rate. Interval is {self.impediment_interval}")
-                    print(f"Next increase at: {self.impediment_increase}")
                     pygame.time.set_timer(self.impediment_timer, self.impediment_interval)
 
                 # Render the background first.
