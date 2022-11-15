@@ -4,8 +4,6 @@ import sys
 
 from random import randint, choice
 
-from pygame.time import get_ticks
-
 
 
 PLAYER_INTERVAL = 15
@@ -15,6 +13,10 @@ IMPEDIMENT_INTERVAL = 1000
 FRAME_RATE = 30
 POINT_INCREMENT = 5
 SPAWN_INTERVAL = 12
+MUSIC_VOLUME = 0.2
+COLLECT_VOLUME = 1.0
+FAIL_VOLUME = 0.4
+EFFECT_CHANNEL = 1
 
 # Class for tracking impediments, good or bad.
 class Impediment(pygame.sprite.Sprite):
@@ -125,6 +127,18 @@ class GRunner:
         self.player_intro_surf = pygame.transform.rotozoom(self.player_intro_surf, 0, 0.5)
         self.player_intro_rect = self.player_intro_surf.get_rect(center = (400, 175))
 
+        pygame.mixer.init()
+        pygame.mixer.music.set_volume(MUSIC_VOLUME)
+        self.title_music = pygame.mixer.Sound("static/ObservingTheStar.ogg")
+        #self.game_music = pygame.mixer.Sound("static/mali_and_lugi_vs_bopple.ogg")
+        self.game_music = pygame.mixer.Sound("static/Drifting_Beyond_the_Stars.ogg")
+        self.collection_sound = pygame.mixer.Sound("static/coin.wav")
+        self.failure_sound = pygame.mixer.Sound("static/qubodup-PowerDrain.ogg")
+        self.title_music.set_volume(MUSIC_VOLUME)
+        self.game_music.set_volume(MUSIC_VOLUME)
+        self.collection_sound.set_volume(COLLECT_VOLUME)
+        self.failure_sound.set_volume(FAIL_VOLUME)
+
         # Define properties for how rapidly objects move.
         self.movement_interval = BACKGROUND_INTERVAL
         self.movement_scale = 0.0
@@ -170,9 +184,11 @@ class GRunner:
         sprite_collision = pygame.sprite.spritecollide(self.gprime.sprite, self.impediment, False)
         for single_sprite in sprite_collision:
             if single_sprite.category == "vim" or single_sprite.category == "apple":
+                pygame.mixer.Channel(EFFECT_CHANNEL).play(self.collection_sound)
                 self.score += POINT_INCREMENT
                 single_sprite.kill()
             elif single_sprite.category == "dell" or single_sprite.category == "vscode":
+                pygame.mixer.Channel(EFFECT_CHANNEL).play(self.failure_sound)
                 self.state = "over"
                 self.impediment.empty()
                 self.gprime.sprite.reset()
@@ -202,6 +218,7 @@ class GRunner:
 
             # Display the title screen.
             if self.state == "title":
+                self.title_music.play(loops=-1)
                 self.screen.fill((51, 204, 205))
                 self.screen.blit(self.player_intro_surf, self.player_intro_rect)
 
@@ -218,6 +235,8 @@ class GRunner:
                 self.screen.blit(instruct_surface, instruct_rect)
 
             elif self.state == "over":
+                self.game_music.stop()
+                self.title_music.play(loops=-1)
                 if self.score > self.high_score:
                     self.high_score = self.score
                 self.score = 0
@@ -241,6 +260,8 @@ class GRunner:
                 self.screen.blit(instruct_surface, instruct_rect)
 
             elif self.state == "running":
+                self.title_music.stop()
+                self.game_music.play(loops=-1)
                 self.movement_scale += SCALE_INTERVAL
 
                 # Check if the spawn rates needs to be increased.

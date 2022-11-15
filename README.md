@@ -5,4 +5,10 @@ Python project to familiarize myself with basic game design. The game is written
 # Credits
 
 - [Sky and city background](https://opengameart.org/content/urban-landscape)
+- [Collection sound](https://opengameart.org/content/plingy-coin)
+- [Failure sound](https://opengameart.org/content/energy-drain)
+- [Title music](https://opengameart.org/content/another-space-background-track)
+- [Gameplay music](https://opengameart.org/content/drifting-beyond-the-stars-background-ambient)
+
+Custom sprites created with [Piskel](https://www.piskelapp.com/).
 
