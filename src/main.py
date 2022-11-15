@@ -130,7 +130,6 @@ class GRunner:
         pygame.mixer.init()
         pygame.mixer.music.set_volume(MUSIC_VOLUME)
         self.title_music = pygame.mixer.Sound("static/ObservingTheStar.ogg")
-        #self.game_music = pygame.mixer.Sound("static/mali_and_lugi_vs_bopple.ogg")
         self.game_music = pygame.mixer.Sound("static/Drifting_Beyond_the_Stars.ogg")
         self.collection_sound = pygame.mixer.Sound("static/coin.wav")
         self.failure_sound = pygame.mixer.Sound("static/qubodup-PowerDrain.ogg")
