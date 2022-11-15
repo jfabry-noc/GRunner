@@ -12,7 +12,7 @@ The high score for the current session is tracked until the game is closed.
 
 # Credits
 
-All artifacts other than Garrett come from [OpenGameArt.org](https://opengameart.org/):
+Many artifacts are sourced from [OpenGameArt.org](https://opengameart.org/):
 
 - [Sky and city background](https://opengameart.org/content/urban-landscape)
 - [Collection sound](https://opengameart.org/content/plingy-coin)

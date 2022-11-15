@@ -5,7 +5,7 @@ import sys
 from random import randint, choice
 
 
-
+# Various settings used through the game.
 PLAYER_INTERVAL = 15
 BACKGROUND_INTERVAL = 5
 SCALE_INTERVAL = 0.003
@@ -20,7 +20,7 @@ EFFECT_CHANNEL = 1
 
 # Class for tracking impediments, good or bad.
 class Impediment(pygame.sprite.Sprite):
-    def __init__(self, category: str):
+    def __init__(self, category: str) -> None:
         """
         Objects the player can interact with.
 
@@ -30,17 +30,17 @@ class Impediment(pygame.sprite.Sprite):
         super().__init__()
         self.category = category.lower()
         if self.category == "vim":
-            self.image = pygame.image.load("static/vim.png")
+            self.image = pygame.image.load("static/images/vim.png")
         elif self.category == "apple":
-            self.image = pygame.image.load("static/apple.png")
+            self.image = pygame.image.load("static/images/apple.png")
         elif self.category == "dell":
-            self.image = pygame.image.load("static/dell.png")
+            self.image = pygame.image.load("static/images/dell.png")
         elif self.category == "vscode":
-            self.image = pygame.image.load("static/vscode.png")
+            self.image = pygame.image.load("static/images/vscode.png")
 
         self.rect = self.image.get_rect(center = (randint(900, 1100), randint(30, 370)))
 
-    def update(self, interval: int, scale: float):
+    def update(self, interval: int, scale: float) -> None:
         """
         Upates the position of the impediment. Takes an integer for how much
         the X axis should change and a float for the exponential scaling to
@@ -53,7 +53,7 @@ class Impediment(pygame.sprite.Sprite):
         self.rect.x = self.rect.x - (interval + (interval * scale))
         self.destroy()
 
-    def destroy(self):
+    def destroy(self) -> None:
         """
         Manages the cleanup of impediments which are off the screen.
         """
@@ -62,7 +62,7 @@ class Impediment(pygame.sprite.Sprite):
 
 # Class for Garrett Prime.
 class GPrime(pygame.sprite.Sprite):
-    def __init__(self, interval: int):
+    def __init__(self, interval: int) -> None:
         """
         Sprite child class to represent Garrett Prime, the player.
 
@@ -71,14 +71,18 @@ class GPrime(pygame.sprite.Sprite):
         """
         super().__init__()
         self.interval = interval
-        self.garrett_teeth = pygame.transform.rotozoom(pygame.image.load("static/gprime_0.png").convert_alpha(), 0, 0.4)
-        self.garrett_mouth = pygame.transform.rotozoom(pygame.image.load("static/gprime_1.png").convert_alpha(), 0, 0.4)
+        self.garrett_teeth = pygame.transform.rotozoom(pygame.image.load("static/images/gprime_0.png").convert_alpha(), 0, 0.4)
+        self.garrett_mouth = pygame.transform.rotozoom(pygame.image.load("static/images/gprime_1.png").convert_alpha(), 0, 0.4)
         self.garrett_fly = [self.garrett_teeth, self.garrett_mouth]
         self.animation_index = 0
         self.image = self.garrett_fly[self.animation_index]
         self.rect = self.image.get_rect(center = (80, 200))
 
-    def player_input(self):
+    def player_input(self) -> None:
+        """
+        Gathers player input and moves Garrett. Up and Down are the only
+        valid inputs.
+        """
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP]:
             self.rect.y -= self.interval
@@ -89,16 +93,26 @@ class GPrime(pygame.sprite.Sprite):
             if self.rect.bottom >= 400:
                 self.rect.bottom = 400
 
-    def reset(self):
+    def reset(self) -> None:
+        """
+        Resets Garrett on the y-axis. Used to revert position when the game
+        ends.
+        """
         self.rect.center = (80, 200)
 
-    def update_animation(self):
+    def update_animation(self) -> None:
+        """
+        Updates the animation between the two frames.
+        """
         self.animation_index += 0.1
         if self.animation_index >= len(self.garrett_fly):
             self.animation_index = 0
         self.image = self.garrett_fly[int(self.animation_index)]
 
-    def update(self):
+    def update(self) -> None:
+        """
+        Meta class to process everything involving updating Garrett.
+        """
         self.player_input()
         self.update_animation()
 
@@ -108,7 +122,7 @@ class GRunner:
         Initializes the game object.
         """
         pygame.init()
-        pygame.display.set_caption("G Runner")
+        pygame.display.set_caption("GRunner")
         self.tick_rate = FRAME_RATE
         self.score = 0
         self.high_score = 0
@@ -117,22 +131,22 @@ class GRunner:
         self.impediment_interval = IMPEDIMENT_INTERVAL
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
-        self.background_surf = pygame.image.load("static/city.png").convert()
+        self.background_surf = pygame.image.load("static/images/city.png").convert()
         self.background_rect = self.background_surf.get_rect(topleft = (0, 0))
-        self.score_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 40)
-        self.title_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 75)
-        self.text_font = pygame.font.Font("fonts/Prompt-Medium.ttf", 35)
+        self.score_font = pygame.font.Font("static/fonts/Prompt-Medium.ttf", 40)
+        self.title_font = pygame.font.Font("static/fonts/Prompt-Medium.ttf", 75)
+        self.text_font = pygame.font.Font("static/fonts/Prompt-Medium.ttf", 35)
         self.state = "title"
-        self.player_intro_surf = pygame.image.load("static/gprime_0.png").convert_alpha()
+        self.player_intro_surf = pygame.image.load("static/images/gprime_0.png").convert_alpha()
         self.player_intro_surf = pygame.transform.rotozoom(self.player_intro_surf, 0, 0.5)
         self.player_intro_rect = self.player_intro_surf.get_rect(center = (400, 175))
 
         pygame.mixer.init()
         pygame.mixer.music.set_volume(MUSIC_VOLUME)
-        self.title_music = pygame.mixer.Sound("static/ObservingTheStar.ogg")
-        self.game_music = pygame.mixer.Sound("static/Drifting_Beyond_the_Stars.ogg")
-        self.collection_sound = pygame.mixer.Sound("static/coin.wav")
-        self.failure_sound = pygame.mixer.Sound("static/qubodup-PowerDrain.ogg")
+        self.title_music = pygame.mixer.Sound("static/audio/ObservingTheStar.ogg")
+        self.game_music = pygame.mixer.Sound("static/audio/Drifting_Beyond_the_Stars.ogg")
+        self.collection_sound = pygame.mixer.Sound("static/audio/coin.wav")
+        self.failure_sound = pygame.mixer.Sound("static/audio/qubodup-PowerDrain.ogg")
         self.title_music.set_volume(MUSIC_VOLUME)
         self.game_music.set_volume(MUSIC_VOLUME)
         self.collection_sound.set_volume(COLLECT_VOLUME)
@@ -153,7 +167,7 @@ class GRunner:
         self.impediment_timer = pygame.USEREVENT + 1
         pygame.time.set_timer(self.impediment_timer, self.impediment_interval)
 
-    def print_background(self):
+    def print_background(self) -> None:
         """
         Adjusts the background image.
         """
@@ -162,7 +176,7 @@ class GRunner:
             self.background_rect.left = 0
         self.screen.blit(self.background_surf, self.background_rect)
 
-    def display_score(self, increase: int = 0):
+    def display_score(self, increase: int = 0) -> None:
         """
         Displays the score. If a number is passed, the score will be incremented
         by that amount.
@@ -175,7 +189,7 @@ class GRunner:
         self.score_rect = self.score_surf.get_rect(center = (400, 40))
         self.screen.blit(self.score_surf, self.score_rect)
 
-    def detect_collision(self):
+    def detect_collision(self) -> None:
         """
         Checks if the player has collided with an impediment.
         """
