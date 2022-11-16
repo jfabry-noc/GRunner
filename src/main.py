@@ -256,6 +256,7 @@ class GRunner:
                 self.movement_scale = 0
                 self.impediment_interval = IMPEDIMENT_INTERVAL
                 self.impediment_increase = SPAWN_INTERVAL
+                pygame.time.set_timer(self.impediment_timer, self.impediment_interval)
 
                 self.screen.fill((51, 204, 205))
                 self.screen.blit(self.player_intro_surf, self.player_intro_rect)
