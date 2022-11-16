@@ -10,6 +10,10 @@ Touching an Apple or Vim icon will grant 5 points. Touching a Dell or VSCode ico
 
 The high score for the current session is tracked until the game is closed.
 
+# Gameplay
+
+Here's a video of the game in action: [Vimeo](https://vimeo.com/manage/videos/771373876)
+
 # Credits
 
 Many artifacts are sourced from [OpenGameArt.org](https://opengameart.org/):
